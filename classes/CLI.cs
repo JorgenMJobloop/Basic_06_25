@@ -8,7 +8,11 @@ public class CLI : ICLI
 
     public void AppendFileContent(string filePath, string content)
     {
-        throw new NotImplementedException();
+        if (!File.Exists(filePath))
+        {
+            File.Create(filePath);
+        }
+        File.AppendAllText(filePath, content);
     }
 
     public string GreetUser(string username)
@@ -18,7 +22,8 @@ public class CLI : ICLI
 
     public void ReadFileContent(string filePath)
     {
-        throw new NotImplementedException();
+        string content = File.ReadAllText(filePath);
+        Console.WriteLine(content);
     }
 
 
@@ -63,7 +68,6 @@ public class CLI : ICLI
     {
         Console.WriteLine("Running debug mode");
         Console.WriteLine($"Testing JSON methods...");
-        AddToJSONFile();
         ReadFromJSONFile("test_file.json");
     }
 
@@ -75,10 +79,98 @@ public class CLI : ICLI
         return env;
     }
 
+    private bool ValidateLogin(string filePath, string username, string password)
+    {
+        try
+        {
+            if (!File.Exists(filePath))
+            {
+                Console.WriteLine("The user data file was not found!");
+                return false;
+            }
+
+            string jsonContent = File.ReadAllText(filePath);
+            var userData = JsonSerializer.Deserialize<Dictionary<string, string[]>>(jsonContent);
+
+            if (userData == null || !userData.ContainsKey("username") || !userData.ContainsKey("password"))
+            {
+                Console.WriteLine("Invalid file structure!");
+                return false;
+            }
+
+            var usernames = userData["username"];
+            var passwords = userData["password"];
+
+            for (int i = 0; i < usernames.Length; i++)
+            {
+                if (i < passwords.Length && usernames[i] == username && passwords[i] == password)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        catch (Exception exception)
+        {
+            Console.WriteLine($"There was an error when attempting to log in: {exception.Message}");
+            return false;    
+        }
+    }
+
+
+    private void UpdateUserFile(string filePath, string username, string password)
+    {
+        Dictionary<string, List<string>> userData;
+
+        if (File.Exists(filePath))
+        {
+            string jsonContent = File.ReadAllText(filePath);
+
+            try
+            {
+                var existingData = JsonSerializer.Deserialize<Dictionary<string, string[]>>(jsonContent);
+                userData = existingData!.ToDictionary(
+                    keyValuePair => keyValuePair.Key,
+                    keyValuePair => keyValuePair.Value.ToList()
+                ) ?? new Dictionary<string, List<string>>()
+                {
+                    {"username", new List<string>()},
+                    {"passowrd", new List<string>()}
+                };
+            }
+            catch
+            {
+                Console.WriteLine("Recieved invalid JSON file format! Reinitalizing.");
+                userData = new Dictionary<string, List<string>>()
+                {
+                    {"username", new List<string>()},
+                    {"password", new List<string>()}
+                };
+            }
+        }
+        else
+        {
+            userData = new Dictionary<string, List<string>>()
+            {
+                {"username", new List<string>()},
+                {"password", new List<string>()}
+            };
+        }
+
+        userData["username"].Add(username);
+        userData["password"].Add(password);
+
+        var updateData = userData.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToArray());
+        string updateJSONFileData = JsonSerializer.Serialize(updateData, new JsonSerializerOptions { WriteIndented = true });
+        File.WriteAllText(filePath, updateJSONFileData);
+
+        Console.WriteLine("A new user was successfully added!");
+    }
+
     public void RunCLI()
     {
         Console.WriteLine("Welcome to the User CLI\n");
-        Console.WriteLine("Usage: login username, password\nlogout\nread <file>\nappend <file>\ngreet <username>\ndebug [debug mode]");
+        Console.WriteLine("Usage: login <username> <password>\nadduser <username> <password>\nlogout\nread <file>\nappend <file> <content>\ngreet <username>\ndebug [debug mode]");
 
         string username = "test";
 
@@ -87,7 +179,27 @@ public class CLI : ICLI
         switch (arguments!.ToLower())
         {
             case "login":
-                Console.WriteLine("");
+                Console.WriteLine("Enter username: ");
+                string user = Console.ReadLine()!;
+                Console.WriteLine("Enter password: ");
+                string passwd = Console.ReadLine()!;
+                // Check the validity of the incomming user data
+                bool success = ValidateLogin("test_file.json", user, passwd);
+                if (success)
+                {
+                    Console.WriteLine($"Login Successfull!\nWelcome {user}");
+                }
+                else
+                {
+                    Console.WriteLine("Invalid username or password!");    
+                }
+                break;
+            case "adduser":
+                Console.WriteLine("Enter a new username: ");
+                string _username = Console.ReadLine()!;
+                Console.WriteLine("Enter a new password: ");
+                string _password = Console.ReadLine()!;
+                UpdateUserFile("test_file.json", _username, _password);
                 break;
             case "read":
                 string? file = Console.ReadLine();
@@ -100,11 +212,10 @@ public class CLI : ICLI
                 AppendFileContent(filePath, content);
                 break;
             case "greet":
-                GreetUser(username);
+                Console.WriteLine(GreetUser(username));
                 break;
             case "debug":
                 DebugMode();
-                Console.WriteLine(GetSecrets(".env", false));
                 break;
             default:
                 return;
