@@ -233,6 +233,14 @@ public class CLI : ICLI
         }
     }
 
+    private void HandleAddUser()
+    {
+        var username = AnsiConsole.Ask<string>("New [green]username[/]:");
+        var password = AnsiConsole.Prompt(new TextPrompt<string>("New [green]password[/]:").PromptStyle("red").Secret());
+
+        UpdateUserFile("test_file.json", username, password);
+    }
+
     public void RunCLI()
     {
 
@@ -252,11 +260,7 @@ public class CLI : ICLI
                     HandleLoginPrompt();
                     break;
                 case "adduser":
-                    AnsiConsole.MarkupLine("[green]Enter a new username:[/]");
-                    string _username = Console.ReadLine()!;
-                    AnsiConsole.MarkupLine("[green]Enter a new password:[/]");
-                    string _password = Console.ReadLine()!;
-                    UpdateUserFile("test_file.json", _username, _password);
+                    HandleAddUser();
                     break;
                 case "read":
                     AnsiConsole.MarkupLine("[green]Enter name of the file you wish to read: (supported formats: <.txt, .md, .json, .*>)[/]");
@@ -264,8 +268,9 @@ public class CLI : ICLI
                     ReadFileContent(file!);
                     break;
                 case "append":
+                    AnsiConsole.MarkupLine("[green]Enter name of the file you wish to modify: (supported formats: <.txt, .md, .json, .*>)[/]");
                     string filePath = Console.ReadLine()!;
-                    Console.WriteLine("Write changes:\n");
+                    AnsiConsole.MarkupLine("[green]Write changes:[/]");
                     string content = Console.ReadLine()!;
                     AppendFileContent(filePath, content);
                     break;
@@ -285,6 +290,10 @@ public class CLI : ICLI
                     return;
             }
             AnsiConsole.WriteLine(); // newline
+            AnsiConsole.Markup("[grey]Press Enter to return to menu...[/]");
+            Console.ReadLine(); // await Enter key
+            AnsiConsole.Clear(); // clear the console
+            ShowNewWelcomeMessage();
         }
     }
 }
