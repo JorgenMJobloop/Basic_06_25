@@ -208,31 +208,29 @@ public class CLI : ICLI
         Console.WriteLine("A new user was successfully added!");
     }
 
+    private void ShowNewWelcomeMessage()
+    {
+            AnsiConsole.Write(new Panel("Welcome to the [green]User CLI[/]")
+                .Header("")
+                .Border(BoxBorder.Rounded)
+                .Padding(1, 1)
+            );
+    }
+
     public void RunCLI()
     {
 
         while (true)
         {
-            // split these prompts into Spectra variables
-            AnsiConsole.Write(new Panel("Welcome to the [green] User CLI[/]")
-                .Header("@@@@@@@@@@@@@@@@@@@@@@@@@")
-                .Border(BoxBorder.Rounded)
-                .Padding(1, 1)
+            ShowNewWelcomeMessage();
+
+            var command = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                .Title("Select [green] command[/]:")
+                .AddChoices("login", "adduser", "read", "append", "debug", "exit")
             );
-            AnsiConsole.Write(new Rule("[yellow]Available Commands[/]").RuleStyle("grey"));
 
-            AnsiConsole.MarkupLine("[blue]login[/][dim]- Log in with username and password[/]");
-            AnsiConsole.MarkupLine("[blue]adduser[/][dim]- Add a new user to the JSON file[/]");
-            AnsiConsole.MarkupLine("[blue]read[/][dim]- Read content of a given file[/]");
-            AnsiConsole.MarkupLine("[blue]append[/][dim]- Append content of a given file[/]");
-            AnsiConsole.MarkupLine("[blue]greet[/][dim]- Send a greeting to a user of the program![/]");
-            AnsiConsole.MarkupLine("[green]debug[/][dim]- Debug the program.[/]");
-            AnsiConsole.MarkupLine("[green]exit[/][dim]- Exit the program.[/]");
-
-
-            string? arguments = Console.ReadLine();
-
-            switch (arguments!.ToLower())
+            switch (command)
             {
                 case "login":
                     var loginUser = AnsiConsole.Ask<string>("[green]Enter username:[/]");
@@ -256,6 +254,7 @@ public class CLI : ICLI
                     UpdateUserFile("test_file.json", _username, _password);
                     break;
                 case "read":
+                    AnsiConsole.MarkupLine("[green]Enter name of the file you wish to read: (supported formats: <.txt, .md, .json, .*>)[/]");
                     string? file = Console.ReadLine();
                     ReadFileContent(file!);
                     break;
@@ -280,6 +279,8 @@ public class CLI : ICLI
                 default:
                     return;
             }
+
+            AnsiConsole.WriteLine(); // newline
         }
     }
 }
