@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Spectre.Console;
 
 public class CLI : ICLI
 {
@@ -13,24 +14,46 @@ public class CLI : ICLI
             File.Create(filePath);
         }
         File.AppendAllText(filePath, content);
+
     }
 
     public string GreetUser(string username)
     {
-        return $"Hello {username}";
+        var hour = DateTime.Now.Hour;
+        string greeting;
+
+        if (hour >= 5 && hour < 12)
+        {
+            greeting = "Good morning";
+        }
+        else if (hour >= 12 && hour < 18)
+        {
+            greeting = "Good afternoon";
+        }
+        else if (hour >= 18 && hour < 23)
+        {
+            greeting = "Good evening";
+        }
+        else
+        {
+            greeting = "Good night, exiting program...";
+            Environment.Exit(0);
+        }
+        return $"{greeting}, {username}!";
     }
 
     public void ReadFileContent(string filePath)
     {
+        var table = new Table();
+        table.AddColumn("Text");
+        table.AddColumn(new TableColumn("Content").Centered());
         string content = File.ReadAllText(filePath);
-        Console.WriteLine(content);
+
+        table.AddRow("text content", $"[white]{content}[/]");
+
+        AnsiConsole.Write(table);
     }
 
-
-    private string GetPassword()
-    {
-        return "asdjaskfjskgjsdkf";
-    }
 
     private void AddToJSONFile()
     {
@@ -117,6 +140,24 @@ public class CLI : ICLI
         }
     }
 
+    private void DisplayUserData(Dictionary<string, string[]> userData)
+    {
+        var table = new Table();
+        table.AddColumn("Username");
+        table.AddColumn("Password");
+
+        var usernames = userData["username"];
+        var passwords = userData["password"];
+
+        for (int i = 0; i < usernames.Length; i++)
+        {
+            string pw = i < passwords.Length ? passwords[i] : "<missing>";
+            table.AddRow(usernames[i], pw);
+        }
+
+        AnsiConsole.Write(table);
+    }
+
 
     private void UpdateUserFile(string filePath, string username, string password)
     {
@@ -169,56 +210,76 @@ public class CLI : ICLI
 
     public void RunCLI()
     {
-        Console.WriteLine("Welcome to the User CLI\n");
-        Console.WriteLine("Usage: login <username> <password>\nadduser <username> <password>\nlogout\nread <file>\nappend <file> <content>\ngreet <username>\ndebug [debug mode]");
 
-        string username = "test";
-
-        string? arguments = Console.ReadLine();
-
-        switch (arguments!.ToLower())
+        while (true)
         {
-            case "login":
-                Console.WriteLine("Enter username: ");
-                string user = Console.ReadLine()!;
-                Console.WriteLine("Enter password: ");
-                string passwd = Console.ReadLine()!;
-                // Check the validity of the incomming user data
-                bool success = ValidateLogin("test_file.json", user, passwd);
-                if (success)
-                {
-                    Console.WriteLine($"Login Successfull!\nWelcome {user}");
-                }
-                else
-                {
-                    Console.WriteLine("Invalid username or password!");    
-                }
-                break;
-            case "adduser":
-                Console.WriteLine("Enter a new username: ");
-                string _username = Console.ReadLine()!;
-                Console.WriteLine("Enter a new password: ");
-                string _password = Console.ReadLine()!;
-                UpdateUserFile("test_file.json", _username, _password);
-                break;
-            case "read":
-                string? file = Console.ReadLine();
-                ReadFileContent(file!);
-                break;
-            case "append":
-                string filePath = Console.ReadLine()!;
-                Console.WriteLine("Write changes:\n");
-                string content = Console.ReadLine()!;
-                AppendFileContent(filePath, content);
-                break;
-            case "greet":
-                Console.WriteLine(GreetUser(username));
-                break;
-            case "debug":
-                DebugMode();
-                break;
-            default:
-                return;
+            // split these prompts into Spectra variables
+            AnsiConsole.Write(new Panel("Welcome to the [green] User CLI[/]")
+                .Header("@@@@@@@@@@@@@@@@@@@@@@@@@")
+                .Border(BoxBorder.Rounded)
+                .Padding(1, 1)
+            );
+            AnsiConsole.Write(new Rule("[yellow]Available Commands[/]").RuleStyle("grey"));
+
+            AnsiConsole.MarkupLine("[blue]login[/][dim]- Log in with username and password[/]");
+            AnsiConsole.MarkupLine("[blue]adduser[/][dim]- Add a new user to the JSON file[/]");
+            AnsiConsole.MarkupLine("[blue]read[/][dim]- Read content of a given file[/]");
+            AnsiConsole.MarkupLine("[blue]append[/][dim]- Append content of a given file[/]");
+            AnsiConsole.MarkupLine("[blue]greet[/][dim]- Send a greeting to a user of the program![/]");
+            AnsiConsole.MarkupLine("[green]debug[/][dim]- Debug the program.[/]");
+            AnsiConsole.MarkupLine("[green]exit[/][dim]- Exit the program.[/]");
+
+
+            string? arguments = Console.ReadLine();
+
+            switch (arguments!.ToLower())
+            {
+                case "login":
+                    var loginUser = AnsiConsole.Ask<string>("[green]Enter username:[/]");
+                    var loginPassword = AnsiConsole.Prompt(new TextPrompt<string>("[green] enter password:[/]")
+                        .PromptStyle("red")
+                        .Secret());
+                    if (ValidateLogin("test_file.json", loginUser, loginPassword))
+                    {
+                        AnsiConsole.MarkupLine($"[bold green]Login successful. Welcome, [underline]{loginUser}[/]![/]");
+                    }
+                    else
+                    {
+                        AnsiConsole.MarkupLine("[bold red]Invalid username or passowrd.[/]");
+                    }
+                    break;
+                case "adduser":
+                    Console.WriteLine("Enter a new username: ");
+                    string _username = Console.ReadLine()!;
+                    Console.WriteLine("Enter a new password: ");
+                    string _password = Console.ReadLine()!;
+                    UpdateUserFile("test_file.json", _username, _password);
+                    break;
+                case "read":
+                    string? file = Console.ReadLine();
+                    ReadFileContent(file!);
+                    break;
+                case "append":
+                    string filePath = Console.ReadLine()!;
+                    Console.WriteLine("Write changes:\n");
+                    string content = Console.ReadLine()!;
+                    AppendFileContent(filePath, content);
+                    break;
+                case "greet":
+                    var _userName = AnsiConsole.Ask<string>("Enter your [green]username[/]:");
+                    var message = GreetUser(_userName);
+                    AnsiConsole.MarkupLine($"[bold yellow]{message}[/]");
+                    break;
+                case "debug":
+                    DebugMode();
+                    break;
+                case "exit":
+                    AnsiConsole.MarkupLine("[red]Exiting program...[/]");
+                    Environment.Exit(0);
+                    break;
+                default:
+                    return;
+            }
         }
     }
 }
