@@ -136,7 +136,7 @@ public class CLI : ICLI
         catch (Exception exception)
         {
             AnsiConsole.MarkupLine($"[red]There was an error when attempting to log in: {exception.Message}[/]");
-            return false;    
+            return false;
         }
     }
 
@@ -210,11 +210,27 @@ public class CLI : ICLI
 
     private void ShowNewWelcomeMessage()
     {
-            AnsiConsole.Write(new Panel("Welcome to the [green]User CLI[/]")
-                .Header("")
-                .Border(BoxBorder.Rounded)
-                .Padding(1, 1)
-            );
+        AnsiConsole.Write(new Panel("Welcome to the [green]User CLI[/]")
+            .Header("")
+            .Border(BoxBorder.Rounded)
+            .Padding(1, 1)
+        );
+    }
+
+    private void HandleLoginPrompt()
+    {
+        var loginUser = AnsiConsole.Ask<string>("[green]Enter username:[/]");
+        var loginPassword = AnsiConsole.Prompt(new TextPrompt<string>("[green] enter password:[/]")
+            .PromptStyle("red")
+            .Secret());
+        if (ValidateLogin("test_file.json", loginUser, loginPassword))
+        {
+            AnsiConsole.MarkupLine($"[bold green]Login successful. Welcome, [underline]{loginUser}[/]![/]");
+        }
+        else
+        {
+            AnsiConsole.MarkupLine("[bold red]Invalid username or passowrd.[/]");
+        }
     }
 
     public void RunCLI()
@@ -233,18 +249,7 @@ public class CLI : ICLI
             switch (command)
             {
                 case "login":
-                    var loginUser = AnsiConsole.Ask<string>("[green]Enter username:[/]");
-                    var loginPassword = AnsiConsole.Prompt(new TextPrompt<string>("[green] enter password:[/]")
-                        .PromptStyle("red")
-                        .Secret());
-                    if (ValidateLogin("test_file.json", loginUser, loginPassword))
-                    {
-                        AnsiConsole.MarkupLine($"[bold green]Login successful. Welcome, [underline]{loginUser}[/]![/]");
-                    }
-                    else
-                    {
-                        AnsiConsole.MarkupLine("[bold red]Invalid username or passowrd.[/]");
-                    }
+                    HandleLoginPrompt();
                     break;
                 case "adduser":
                     AnsiConsole.MarkupLine("[green]Enter a new username:[/]");
@@ -279,7 +284,6 @@ public class CLI : ICLI
                 default:
                     return;
             }
-
             AnsiConsole.WriteLine(); // newline
         }
     }
