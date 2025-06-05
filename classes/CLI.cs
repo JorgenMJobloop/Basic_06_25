@@ -108,7 +108,7 @@ public class CLI : ICLI
         {
             if (!File.Exists(filePath))
             {
-                Console.WriteLine("The user data file was not found!");
+                AnsiConsole.MarkupLine("[red]The user data file was not found![/]");
                 return false;
             }
 
@@ -117,7 +117,7 @@ public class CLI : ICLI
 
             if (userData == null || !userData.ContainsKey("username") || !userData.ContainsKey("password"))
             {
-                Console.WriteLine("Invalid file structure!");
+                AnsiConsole.MarkupLine("[red]Invalid file structure![/]");
                 return false;
             }
 
@@ -135,7 +135,7 @@ public class CLI : ICLI
         }
         catch (Exception exception)
         {
-            Console.WriteLine($"There was an error when attempting to log in: {exception.Message}");
+            AnsiConsole.MarkupLine($"[red]There was an error when attempting to log in: {exception.Message}[/]");
             return false;    
         }
     }
@@ -181,7 +181,7 @@ public class CLI : ICLI
             }
             catch
             {
-                Console.WriteLine("Recieved invalid JSON file format! Reinitalizing.");
+                AnsiConsole.MarkupLine("[red]Recieved invalid JSON file format! Reinitalizing.[/]");
                 userData = new Dictionary<string, List<string>>()
                 {
                     {"username", new List<string>()},
@@ -249,9 +249,9 @@ public class CLI : ICLI
                     }
                     break;
                 case "adduser":
-                    Console.WriteLine("Enter a new username: ");
+                    AnsiConsole.MarkupLine("[green]Enter a new username:[/]");
                     string _username = Console.ReadLine()!;
-                    Console.WriteLine("Enter a new password: ");
+                    AnsiConsole.MarkupLine("[green]Enter a new password:[/]");
                     string _password = Console.ReadLine()!;
                     UpdateUserFile("test_file.json", _username, _password);
                     break;
