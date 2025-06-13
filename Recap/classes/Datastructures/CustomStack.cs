@@ -1,6 +1,7 @@
 public class CustomStack<T> : ICustomStack<T>
 {
     private List<T> Elements = new List<T>();
+
     public void Push(T item)
     {
         Elements.Add(item);

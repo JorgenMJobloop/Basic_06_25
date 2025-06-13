@@ -4,16 +4,19 @@ class Program
 {
     static void Main(string[] args)
     {
+        PrintEmployees printEmployees = new PrintEmployees();
+
+        Interpreter interpreter = new Interpreter();
+
         CustomStack<string> stack = new CustomStack<string>();
 
         CustomStack<double> numberStack = new CustomStack<double>();
 
+        Birds birds = new Birds();
 
         stack.Push("Hello World");
-        stack.Pop();
 
         stack.Print();
-
 
         numberStack.Push(1);
         numberStack.Push(2);
@@ -21,16 +24,11 @@ class Program
 
         numberStack.Print();
 
-        List<Employee> employees = new List<Employee>()
-        {
-            new Developer { Name = "Peter"},
-            new Manager { Name = "Bill Lumbergh"},
-        };
+        printEmployees.Print();
 
-        foreach (var employee in employees)
-        {
-            employee.Work();
-        }
+        birds.Species = "Chicken";
+        birds.Cry();
 
+        //interpreter.RunREPL();
     }
 }

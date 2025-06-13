@@ -4,6 +4,35 @@ using System.Globalization;
 
 public class Interpreter
 {
+    private readonly Dictionary<string, double> _variables = new Dictionary<string, double>();
+
+    private double ProcessInput(string input)
+    {
+        var assignedValues = input.Split('=', 2);
+        if (assignedValues.Length == 2)
+        {
+            var variableName = assignedValues[0].Trim();
+            var expression = assignedValues[1].Trim();
+
+            if (!IsValidVariableName(variableName))
+            {
+                throw new Exception("Invalid variable name.");
+            }
+
+            double value = Evaluate(expression);
+            _variables[variableName] = value;
+            return value;
+        }
+        else
+        {
+            return Evaluate(input);
+        }
+    }
+
+    private bool IsValidVariableName(string name)
+    {
+        return !string.IsNullOrWhiteSpace(name) && char.IsLetter(name[0]);
+    }
 
     private double Evaluate(string expression)
     {
@@ -31,6 +60,7 @@ public class Interpreter
             if ("+-*/()".Contains(c))
             {
                 tokens.Add(c.ToString());
+                index++;
             }
             else if (char.IsDigit(c) || c == '.')
             {
@@ -41,6 +71,15 @@ public class Interpreter
                     index++;
                 }
                 tokens.Add(number);
+            }
+            else if (char.IsLetter(c))
+            {
+                var name = "";
+                while (index < expression.Length && char.IsLetterOrDigit(expression[index]))
+                {
+                    name += expression[index++];
+                }
+                tokens.Add(name);
             }
             else
             {
@@ -61,7 +100,7 @@ public class Interpreter
 
         foreach (var token in tokens)
         {
-            if (double.TryParse(token, NumberStyles.Any, CultureInfo.InvariantCulture, out _))
+            if (double.TryParse(token, NumberStyles.Any, CultureInfo.InvariantCulture, out _) || IsValidVariableName(token))
             {
                 output.Add(token);
             }
@@ -113,7 +152,11 @@ public class Interpreter
             {
                 stack.Push(value);
             }
-            else
+            else if (_variables.ContainsKey(token))
+            {
+                stack.Push(_variables[token]);
+            }
+            else if ("+-*/".Contains(token))
             {
                 if (stack.Count < 2)
                 {
@@ -134,6 +177,15 @@ public class Interpreter
 
                 stack.Push(result);
             }
+            else
+            {
+                throw new Exception("Unknown variable assignment!");
+            }
+
+            if (stack.Count != 1)
+            {
+                throw new Exception("Invalid expression!");
+            }
         }
 
         if (stack.Count != 1)
@@ -147,29 +199,28 @@ public class Interpreter
 
     public void RunREPL()
     {
-        Console.WriteLine($"Basic Interpreter (currently supports: +,-,*,/, parentheses). Press 'exit' to quit.");
+        Console.WriteLine($"Python Clone\nC#ython. Press 'exit' to quit.");
 
         while (true)
         {
-            Console.Write("> ");
+            Console.Write(">>> ");
 
             var input = Console.ReadLine()!;
 
-            if (string.IsNullOrWhiteSpace(input))
+            if (string.IsNullOrWhiteSpace(input) || input.ToLower() == "exit")
             {
                 break;
             }
 
             try
             {
-                double result = Evaluate(input);
-                Console.WriteLine($"> {result}");
+                double result = ProcessInput(input);
+                Console.WriteLine($">>> {result}");
             }
             catch (Exception e)
             {
-                Console.WriteLine($"An error occured: {e.Message}");
+                Console.WriteLine($">>> An error occured: {e.Message}");
             }
         }
     }
-
 }
